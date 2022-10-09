@@ -49,6 +49,29 @@ resource "azurerm_network_interface" "my_nic" {
   }
 }
 
+resource "azurerm_network_security_group" "my_nsg" {
+  name                = "vpnNetworkSecurityGroup"
+  resource_group_name = azurerm_resource_group.vpnrg.name
+  location            = azurerm_resource_group.vpnrg.location
+
+  security_rule {
+    name                       = "SSH"
+    priority                   = 1002
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+resource "azurerm_network_interface_security_group_association" "vpn_nic_security_group" {
+  network_interface_id      = azurerm_network_interface.my_nic.id
+  network_security_group_id = azurerm_network_security_group.my_nsg.id
+}
+
 resource "azurerm_linux_virtual_machine" "openvpn" {
   name                = "palladium"
   resource_group_name = azurerm_resource_group.vpnrg.name
@@ -166,7 +189,7 @@ resource "azurerm_linux_virtual_machine" "minecraft_vm" {
   size                = "Standard_B2s"
   admin_username      = "adminuser"
   network_interface_ids = [
-    azurerm_network_interface.my_nic.id
+    azurerm_network_interface.mc_nic.id
   ]
 
   admin_ssh_key {
