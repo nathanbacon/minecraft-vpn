@@ -186,24 +186,3 @@ resource "azurerm_linux_virtual_machine" "minecraft_vm" {
     version   = "latest"
   }
 }
-
-resource "null_resource" "minecraft" {
-  connection {
-    type        = "ssh"
-    user        = "adminuser"
-    private_key = file("~/.ssh/id_rsa")
-    host        = azurerm_public_ip.mc_public_ip.ip_address
-    port        = "22"
-  }
-
-  provisioner "file" {
-    source      = "mc.sh"
-    destination = "/tmp/mc.sh"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "/bin/bash /tmp/mc.sh"
-    ]
-  }
-}
