@@ -5,6 +5,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.0.2"
     }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.0.2"
+    }
   }
 
   required_version = ">= 1.1.0"
@@ -139,12 +143,20 @@ resource "azurerm_network_interface" "mc_nic" {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.mc_subnet.id
     private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.mc_public_ip.id
   }
 }
 
 resource "azurerm_network_interface_security_group_association" "mc_nic_security_group" {
   network_interface_id      = azurerm_network_interface.mc_nic.id
   network_security_group_id = azurerm_network_security_group.mc_nsg.id
+}
+
+resource "azurerm_public_ip" "mc_public_ip" {
+  name                = "mc_server_public_ip"
+  location            = azurerm_resource_group.mc_rg.location
+  resource_group_name = azurerm_resource_group.mc_rg.name
+  allocation_method   = "Dynamic"
 }
 
 resource "azurerm_linux_virtual_machine" "minecraft_vm" {
@@ -175,6 +187,10 @@ resource "azurerm_linux_virtual_machine" "minecraft_vm" {
   }
 }
 
-resource "null_resource" "name" {
-  
+resource "null_resource" "minecraft" {
+  connection {
+    type        = "ssh"
+    user        = "adminuser"
+    private_key = file("~/.ssh/id_rsa")
+  }
 }
