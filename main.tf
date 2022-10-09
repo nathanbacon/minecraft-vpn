@@ -7,7 +7,7 @@ terraform {
     }
     null = {
       source  = "hashicorp/null"
-      version = "~> 3.0.2"
+      version = "~> 3.1.1"
     }
   }
 
@@ -37,6 +37,13 @@ resource "azurerm_subnet" "mysubnet" {
   resource_group_name  = azurerm_resource_group.vpnrg.name
 }
 
+resource "azurerm_public_ip" "vpn_public_ip" {
+  name                = "mc_server_public_ip"
+  location            = azurerm_resource_group.vpnrg.location
+  resource_group_name = azurerm_resource_group.vpnrg.name
+  allocation_method   = "Dynamic"
+}
+
 resource "azurerm_network_interface" "my_nic" {
   name                = "my-nic"
   location            = azurerm_resource_group.vpnrg.location
@@ -46,6 +53,7 @@ resource "azurerm_network_interface" "my_nic" {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.mysubnet.id
     private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.vpn_public_ip.id
   }
 }
 
@@ -77,13 +85,13 @@ resource "azurerm_linux_virtual_machine" "openvpn" {
   resource_group_name = azurerm_resource_group.vpnrg.name
   location            = azurerm_resource_group.vpnrg.location
   size                = "Standard_B1s"
-  admin_username      = "adminuser"
+  admin_username      = "ngelman"
   network_interface_ids = [
     azurerm_network_interface.my_nic.id
   ]
 
   admin_ssh_key {
-    username   = "adminuser"
+    username   = "ngelman"
     public_key = file("~/.ssh/id_rsa.pub")
   }
 
@@ -187,13 +195,13 @@ resource "azurerm_linux_virtual_machine" "minecraft_vm" {
   resource_group_name = azurerm_resource_group.mc_rg.name
   location            = azurerm_resource_group.mc_rg.location
   size                = "Standard_B2s"
-  admin_username      = "adminuser"
+  admin_username      = "ngelman"
   network_interface_ids = [
     azurerm_network_interface.mc_nic.id
   ]
 
   admin_ssh_key {
-    username   = "adminuser"
+    username   = "ngelman"
     public_key = file("~/.ssh/id_rsa.pub")
   }
 
@@ -208,4 +216,12 @@ resource "azurerm_linux_virtual_machine" "minecraft_vm" {
     sku       = "20_04-lts-gen2"
     version   = "latest"
   }
+}
+
+output "mc_server_ip" {
+  value = azurerm_public_ip.mc_public_ip.ip_address
+}
+
+output "vpn_server_ip" {
+  value = azurerm_public_ip.vpn_public_ip.ip_address
 }
